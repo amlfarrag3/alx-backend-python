@@ -29,10 +29,15 @@ def paginate_users(page_size: int, offset: int = 0) -> List[Row]:
         conn.close()
 
 
-def lazy_paginate(page_size: int) -> Generator[List[Row], None, None]:
-    """Lazily yield pages of size `page_size` using only **one** loop."""
+def lazy_paginate(page_size):
+    """Generator that lazily paginates through user_data table.
+    Args:
+        page_size (int): Number of rows to fetch per page.
+    Yields:
+        list of dict: A page of user rows.
+    """
     offset = 0
-    while True:  # single loop
+    while True:
         page = paginate_users(page_size, offset)
         if not page:
             break
