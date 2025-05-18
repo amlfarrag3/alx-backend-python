@@ -1,48 +1,29 @@
-from typing import Generator, List, Tuple
-import mysql.connector
-
-Row = Tuple[str, str, str, int]
+seed = __import__('seed')
 
 
-def _get_connection():
-    import os
-    return mysql.connector.connect(
-        user=os.getenv("MYSQL_USER", "root"),
-        password=os.getenv("MYSQL_PASSWORD", ""),
-        host=os.getenv("MYSQL_HOST", "127.0.0.1"),
-        port=int(os.getenv("MYSQL_PORT", 3306)),
-        database="ALX_prodev",
-    )
-
-
-def paginate_users(page_size: int, offset: int = 0) -> List[Row]:
-    """Fetch a single page of rows starting from `offset` using LIMIT/OFFSET."""
-    conn = _get_connection()
-    try:
-        cur = conn.cursor()
-        # Requirement: must contain "SELECT * FROM user_data LIMIT"
-        cur.execute(
-            "SELECT * FROM user_data LIMIT %s OFFSET %s",
-            (page_size, offset),
-        )
-        return cur.fetchall()
-    finally:
-        conn.close()
-
-
-def lazy_paginate(page_size: int) -> Generator[List[Row], None, None]:
-    """Lazily yield pages of size `page_size`, fetching the next page only when needed.
-
-    Fulfills constraints:
-    * exactly ONE loop (the while below)
-    * uses yield for lazy generation
-    * relies on paginate_users which itself executes the SQL containing
-      "SELECT * FROM user_data LIMIT"
+def stream_user_ages():
+    """Generator to yield user ages one by one
+    Yields:
+        int: Age of each user.
     """
-    offset = 0
-    while True:  # single loop
-        page = paginate_users(page_size, offset)
-        if not page:
-            break
-        yield page
-        offset += page_size
+    connection = seed.connect_to_prodev()
+    cursor = connection.cursor()
+    cursor.execute("SELECT age FROM user_data") 
+    for row in cursor:
+        yield row[0] 
+    connection.close()
+
+
+def calculate_average_age():
+    """Calculates the average age using the generator and prints it.
+    Rturns:
+        None
+    """
+    total_age = 0
+    count = 0
+    for age in stream_user_ages(): 
+        total_age += age
+        count += 1
+    print(f"Average age of users: {total_age / count}")
+
+calculate_average_age()
