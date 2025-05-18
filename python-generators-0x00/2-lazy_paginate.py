@@ -16,12 +16,13 @@ def _get_connection():
 
 
 def paginate_users(page_size: int, offset: int = 0) -> List[Row]:
-    """Return a single page of users starting from offset."""
+    """Fetch a single page of rows starting from `offset` using LIMIT/OFFSET."""
     conn = _get_connection()
     try:
         cur = conn.cursor()
+        # Requirement: must contain "SELECT * FROM user_data LIMIT"
         cur.execute(
-            "SELECT user_id, name, email, age FROM user_data LIMIT %s OFFSET %s",
+            "SELECT * FROM user_data LIMIT %s OFFSET %s",
             (page_size, offset),
         )
         return cur.fetchall()
@@ -29,17 +30,20 @@ def paginate_users(page_size: int, offset: int = 0) -> List[Row]:
         conn.close()
 
 
-def lazy_paginate(page_size):
-    """Generator that lazily paginates through user_data table.
-    Args:
-        page_size (int): Number of rows to fetch per page.
-    Yields:
-        list of dict: A page of user rows.
+def lazy_paginate(page_size: int) -> Generator[List[Row], None, None]:
+    """Lazily yield pages of size `page_size`, fetching the next page only when needed.
+
+    Fulfills constraints:
+    * exactly ONE loop (the while below)
+    * uses yield for lazy generation
+    * relies on paginate_users which itself executes the SQL containing
+      "SELECT * FROM user_data LIMIT"
     """
     offset = 0
-    while True:
+    while True:  # single loop
         page = paginate_users(page_size, offset)
         if not page:
             break
         yield page
         offset += page_size
+
