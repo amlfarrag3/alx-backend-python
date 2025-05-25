@@ -21,3 +21,7 @@ class ExecuteQuery:
             self.connection.close()
 
           
+db_path = "usrs.db"  # replace with your actual database file path
+
+with ExecuteQuery(db_path) as result:
+    print(result)
