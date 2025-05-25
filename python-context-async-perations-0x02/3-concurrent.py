@@ -1,28 +1,26 @@
-import sqlite3
 
-class ExecuteQuery:
-    def __init__(self, db_path):
-        self.db_path = db_path
-        self.connection = None
-        self.cursor = None
-        self.query = "SELECT * FROM users WHERE age > ?"
-        self.params = (25,)
+import aiosqlite
+import asyncio
 
-    def __enter__(self):
-        self.connection = sqlite3.connect(self.db_path)
-        self.cursor = self.connection.cursor()
-        self.cursor.execute(self.query, self.params)
-        return self.cursor.fetchall()
+async def async_fetch_users(db_path):
+    async with aiosqlite.connect(db_path) as db:
+        async with db.execute("SELECT * FROM users") as cursor:
+            return await cursor.fetchall()
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.cursor:
-            self.cursor.close()
-        if self.connection:
-            self.connection.close()
+async def async_fetch_older_users(db_path):
+    async with aiosqlite.connect(db_path) as db:
+        async with db.execute("SELECT * FROM users WHERE age > 40") as cursor:
+            return await cursor.fetchall()
 
+async def fetch_concurrently():
+    db_path = "example.db"
+    results = await asyncio.gather(
+        async_fetch_users(db_path),
+        async_fetch_older_users(db_path)
+    )
+    print("All users:", results[0])
+    print("Users older than 40:", results[1])
 
 if __name__ == "__main__":
-    db_path = "example.db"
-    with ExecuteQuery(db_path) as results:
-        print(results)
-      
+    asyncio.run(fetch_concurrently())
+  
