@@ -1,3 +1,4 @@
+
 import asyncio
 import aiosqlite
 
@@ -30,4 +31,5 @@ async def main():
     for user in older_users:
         print(user)
 
+# Run the main function
 asyncio.run(main())
