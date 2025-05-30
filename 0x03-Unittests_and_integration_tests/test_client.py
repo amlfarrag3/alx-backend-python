@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 import unittest
 from unittest.mock import patch, PropertyMock
-from parameterized import parameterized
+from parameterized import parameterized, parameterized_class
 from client import GithubOrgClient
+import requests
+import fixtures
 
 
 class TestGithubOrgClient(unittest.TestCase):
-    """Tests for GithubOrgClient"""
+    """Unit tests for GithubOrgClient"""
 
     @parameterized.expand([
         ("google",),
@@ -47,7 +49,69 @@ class TestGithubOrgClient(unittest.TestCase):
             mock_get_json.assert_called_once_with("https://api.github.com/orgs/testorg/repos")
             mock_repos_url.assert_called_once()
 
+    @parameterized.expand([
+        ({"license": {"key": "my_license"}}, "my_license", True),
+        ({"license": {"key": "other_license"}}, "my_license", False),
+    ])
+    def test_has_license(self, repo, license_key, expected):
+        """Test GithubOrgClient.has_license method"""
+        self.assertEqual(GithubOrgClient.has_license(repo, license_key), expected)
+
+
+@parameterized_class([
+    {
+        "org_payload": fixtures.ORG_PAYLOAD,
+        "repos_payload": fixtures.REPOS_PAYLOAD,
+        "expected_repos": fixtures.EXPECTED_REPOS,
+        "apache2_repos": fixtures.APACHE2_REPOS,
+    }
+])
+class TestIntegrationGithubOrgClient(unittest.TestCase):
+    """Integration test for GithubOrgClient.public_repos"""
+
+    @classmethod
+    def setUpClass(cls):
+        """Set up patch for requests.get"""
+        cls.get_patcher = patch('requests.get')
+        mock_get = cls.get_patcher.start()
+
+        # Setup side effect for requests.get().json()
+        def side_effect(url):
+            if url == "https://api.github.com/orgs/google":
+                return MockResponse(cls.org_payload)
+            elif url == cls.org_payload["repos_url"]:
+                return MockResponse(cls.repos_payload)
+            return MockResponse(None)
+
+        mock_get.side_effect = lambda url: side_effect(url)
+
+    @classmethod
+    def tearDownClass(cls):
+        """Stop patcher"""
+        cls.get_patcher.stop()
+
+    def test_public_repos(self):
+        """Test the public_repos method using integration fixtures"""
+        client = GithubOrgClient("google")
+        self.assertEqual(client.public_repos(), self.expected_repos)
+
+    def test_public_repos_with_license(self):
+        """Test public_repos with license filtering"""
+        client = GithubOrgClient("google")
+        self.assertEqual(client.public_repos(license="apache-2.0"), self.apache2_repos)
+
+
+class MockResponse:
+    """Mock response to mimic requests.get().json()"""
+    def __init__(self, json_data):
+        self._json = json_data
+
+    def json(self):
+        return self._json
+
 
 if __name__ == "__main__":
     unittest.main()
+
+
           
