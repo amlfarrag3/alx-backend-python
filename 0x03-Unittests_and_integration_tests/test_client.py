@@ -11,33 +11,34 @@ from client import GithubOrgClient
 
 class TestGithubOrgClient(unittest.TestCase):
     """
-    Test GithubOrgClient class.
+    Test GithubOrgClient.org property.
     """
 
     @parameterized.expand([
         ("google",),
         ("abc",),
     ])
-    @patch('client.get_json')
+    @patch('client.get_json', autospec=True)
     def test_org(self, org_name, mock_get_json):
         """
         Test that GithubOrgClient.org returns the correct value.
 
-        This test:
-        - mocks get_json so it does not actually execute,
-        - asserts get_json is called once with the correct URL,
-        - asserts the org property returns the mocked return value.
+        Ensures get_json is called once with expected URL.
         """
         expected_payload = {"login": org_name}
         mock_get_json.return_value = expected_payload
 
         client = GithubOrgClient(org_name)
+
+        # Clear memoize cache if needed (depends on your memoize implementation)
+        if hasattr(client.org, 'cache_clear'):
+            client.org.cache_clear()
+
         result = client.org
 
         self.assertEqual(result, expected_payload)
         mock_get_json.assert_called_once_with(f"https://api.github.com/orgs/{org_name}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
-    
