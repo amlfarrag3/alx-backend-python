@@ -3,7 +3,8 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404
-
+from rest_framework import filters
+from rest_framework.permissions import IsAuthenticated
 from .models import Conversation, Message, User
 from .serializers import ConversationSerializer, MessageSerializer
 
@@ -11,7 +12,11 @@ from .serializers import ConversationSerializer, MessageSerializer
 # === Conversation ViewSet ===
 class ConversationViewSet(viewsets.ModelViewSet):
     queryset = Conversation.objects.prefetch_related('participants', 'messages__sender').all()
-    serializer_class = ConversationSerializer
+    serializer_class = ConversationSerializer 
+    permission_classes = [IsAuthenticated]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]  
+    search_fields = ['participants__first_name', 'participants__last_name']
+    ordering_fields = ['created_at']
 
     def create(self, request, *args, **kwargs):
         participant_ids = request.data.get('participant_ids')
