@@ -19,13 +19,13 @@ class UserSerializer(serializers.ModelSerializer):
 
 # === Message Serializer ===
 class MessageSerializer(serializers.ModelSerializer):
-    sender = UserSerializer(read_only=True)
+    sender_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Message
         fields = [
             'message_id',
-            'sender',
+            'sender_name',
             'message_body',
             'sent_at',
         ]
