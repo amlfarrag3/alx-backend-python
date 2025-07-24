@@ -1,5 +1,10 @@
 import logging
-from datetime import datetime
+from datetime import datetime , timedelta
+from django.http import HttpResponseForbidden
+from django.http import JsonResponse
+from django.utils.deprecation import MiddlewareMixin
+from collections import defaultdict
+
 
 logger = logging.getLogger(__name__)
 handler = logging.FileHandler('request_logs.log')  # Logs to a file in the project root
