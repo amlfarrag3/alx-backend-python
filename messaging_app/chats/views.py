@@ -1,19 +1,32 @@
 from django.shortcuts import render
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status ,filters
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404
-from rest_framework import filters
 from rest_framework.permissions import IsAuthenticated
 from .models import Conversation, Message, User
 from .serializers import ConversationSerializer, MessageSerializer
+from .permissions import IsParticipantOfConversation
+from .filters import MessageFilter
+from django_filters.rest_framework import DjangoFilterBackend
+
+class MessageViewSet(viewsets.ModelViewSet):
+    queryset = Message.objects.all()
+    serializer_class = MessageSerializer
+    permission_classes = [IsAuthenticated, IsParticipantOfConversation]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = MessageFilter
+
+    def get_queryset(self):
+        return self.queryset.filter(conversation__participants=self.request.user)
+
 
 
 # === Conversation ViewSet ===
 class ConversationViewSet(viewsets.ModelViewSet):
     queryset = Conversation.objects.prefetch_related('participants', 'messages__sender').all()
     serializer_class = ConversationSerializer 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsParticipantOfConversation]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]  
     search_fields = ['participants__first_name', 'participants__last_name']
     ordering_fields = ['created_at']
@@ -31,12 +44,15 @@ class ConversationViewSet(viewsets.ModelViewSet):
         conversation.participants.set(participants)
         serializer = self.get_serializer(conversation)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-
+    
+    def get_queryset(self):
+        return Conversation.objects.filter(participants=self.request.user)
+    
 # === Message ViewSet ===
 class MessageViewSet(viewsets.ModelViewSet):
     queryset = Message.objects.select_related('sender', 'conversation').all()
     serializer_class = MessageSerializer
+    permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
         conversation_id = request.data.get('conversation_id')
@@ -62,3 +78,11 @@ class MessageViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(message)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    def get_queryset(self):
+        return Message.objects.filter(conversation__participants=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(sender=self.request.user)
+
+       
+    
