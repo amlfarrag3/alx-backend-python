@@ -44,7 +44,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'Django-Middleware-0x03.chats.middleware.RestrictAccessByTimeMiddleware',
+    'chats.middleware.RestrictAccessByTimeMiddleware',
     'chats.middleware.RequestLoggingMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -54,6 +54,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'chats.middleware.OffensiveLanguageMiddleware',
+    'chats.core.middleware.role_permission.RolePermissionMiddleware',
 ]
 
 ROOT_URLCONF = 'messaging_app.urls'
