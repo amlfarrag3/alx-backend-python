@@ -1,6 +1,8 @@
 from django.db import models
+from django.contrib.auth import get_user_model
 import uuid
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
+
 
 
 # === Custom User Manager ===
@@ -39,7 +41,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
-    password_hash = models.CharField(max_length=128)  # handled by set_password()
     phone_number = models.CharField(max_length=20, null=True, blank=True)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -53,8 +54,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name']
 
+
     def save(self, *args, **kwargs):
-        if not self.password_hash:
+        if self.pk is None:
             self.set_password(self.password)
         super().save(*args, **kwargs)
 
@@ -77,8 +79,21 @@ class Message(models.Model):
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages')
     message_body = models.TextField()
     sent_at = models.DateTimeField(auto_now_add=True)
+    receiver = models.ForeignKey(User, related_name='received_messages', on_delete=models.CASCADE,null=True, blank=True)
 
     def __str__(self):
-        return f"Message from {self.sender.email} at {self.sent_at}"
+        return f"From {self.sender} to {self.receiver} at {self.timestamp}"    
+    
+
+class Notification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    message = models.ForeignKey(Message, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Notification for {self.user} about message {self.message.id}"
 
 
+
+  
