@@ -80,7 +80,7 @@ class OffensiveLanguageMiddleware(MiddlewareMixin):
         return request.META.get('REMOTE_ADDR')
 
 
-class RolePermissionMiddleware(MiddlewareMixin):
+class RolepermissionMiddleware(MiddlewareMixin):
     def __init__(self, get_response):
         self.get_response = get_response
 
