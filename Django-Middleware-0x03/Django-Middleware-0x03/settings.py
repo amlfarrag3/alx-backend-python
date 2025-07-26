@@ -55,7 +55,7 @@ MIDDLEWARE = [
     'chats.middleware.RequestLoggingMiddleware',
     'django.middleware.security.SecurityMiddleware',   
     'chats.middleware.OffensiveLanguageMiddleware',
-    'chats.middleware.RolePermissionMiddleware', 
+    'chats.middleware.RolepermissionMiddleware', 
     'chats.core.middleware.role_permission.RolePermissionMiddleware',
 ]
 
