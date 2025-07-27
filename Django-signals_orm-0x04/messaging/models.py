@@ -83,10 +83,17 @@ class Message(models.Model):
     edited_at = models.DateTimeField(null=True, blank=True)
     edited_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='edited_messages')
     receiver = models.ForeignKey(User, related_name='received_messages', on_delete=models.CASCADE,null=True, blank=True)
-
+    # Self-referential field for replies
+    parent_message = models.ForeignKey(
+        'self',
+        null=True,
+        blank=True,
+        related_name='replies',
+        on_delete=models.CASCADE
+    )
     def __str__(self):
-        return f"From {self.sender} to {self.receiver} at {self.timestamp}"    
-    
+        return f"From {self.sender} to {self.receiver} at {self.timestamp}"  
+        
 
 class Notification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
