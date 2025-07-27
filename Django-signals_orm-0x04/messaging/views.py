@@ -11,6 +11,7 @@ from .filters import MessageFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import get_user_model
 from rest_framework.decorators import api_view, permission_classes
+from django.contrib.auth.decorators import login_required
 
 
 class MessageViewSet(viewsets.ModelViewSet):
@@ -124,3 +125,11 @@ def get_threaded_conversation_data(conversation_id):
         .prefetch_related('replies')
 
     return [serialize_message_with_replies(msg) for msg in top_level_messages]
+
+@login_required
+def user_messages_view(request):
+    messages = Message.objects.filter(sender=request.user, parent_message=None) \
+        .select_related('sender', 'receiver') \
+        .prefetch_related('replies')
+
+    return render(request, 'messaging/user_messages.html', {'messages': messages})
