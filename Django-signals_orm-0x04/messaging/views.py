@@ -13,8 +13,6 @@ from django.contrib.auth import get_user_model
 from rest_framework.decorators import api_view, permission_classes
 
 
-
-
 class MessageViewSet(viewsets.ModelViewSet):
     queryset = Message.objects.all()
     serializer_class = MessageSerializer
@@ -96,3 +94,33 @@ def delete_user(request):
     user = request.user
     user.delete()
     return Response({"message": "Your account has been deleted."}, status=status.HTTP_200_OK)        
+
+def get_conversation_with_threads(conversation_id):
+    conversation = get_object_or_404(Conversation, pk=conversation_id)
+
+    # Optimize DB queries
+    messages = Message.objects.filter(conversation=conversation, parent_message=None) \
+        .select_related('sender', 'receiver') \
+        .prefetch_related('replies') \
+        .order_by('sent_at')
+
+    return messages  # top-level messages, each has .replies.all()
+
+
+def get_threaded_conversation_data(conversation_id):
+    def serialize_message_with_replies(message):
+        return {
+            "id": str(message.message_id),
+            "sender": str(message.sender),
+            "receiver": str(message.receiver),
+            "body": message.message_body,
+            "sent_at": message.sent_at,
+            "replies": [serialize_message_with_replies(reply) for reply in message.replies.all().order_by('sent_at')]
+        }
+
+    conversation = Conversation.objects.get(pk=conversation_id)
+    top_level_messages = Message.objects.filter(conversation=conversation, parent_message=None) \
+        .select_related('sender', 'receiver') \
+        .prefetch_related('replies')
+
+    return [serialize_message_with_replies(msg) for msg in top_level_messages]
