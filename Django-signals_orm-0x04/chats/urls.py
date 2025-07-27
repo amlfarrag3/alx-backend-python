@@ -3,7 +3,7 @@ from django.urls import path, include
 from rest_framework import routers
 from rest_framework_nested.routers import NestedDefaultRouter
 from .views import ConversationViewSet, MessageViewSet
-
+from .views import delete_user
 # Create router instance
 router = routers.DefaultRouter()
 # Base router for conversations
@@ -17,8 +17,8 @@ conversations_router.register(r'messages', MessageViewSet, basename='conversatio
 urlpatterns = [
     path('', include(router.urls)),
     path('', include(conversations_router.urls)),
+    path('delete-account/', delete_user, name='delete_user'),
 ]
-
 
 
 
