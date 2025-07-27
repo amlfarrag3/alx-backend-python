@@ -133,3 +133,8 @@ def user_messages_view(request):
         .prefetch_related('replies')
 
     return render(request, 'messaging/user_messages.html', {'messages': messages})
+
+@login_required
+def unread_messages_view(request):
+    unread_messages = Message.unread.for_user(request.user)
+    return render(request, 'messaging/unread_messages.html', {'messages': unread_messages})
