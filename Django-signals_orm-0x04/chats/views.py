@@ -9,6 +9,11 @@ from .serializers import ConversationSerializer, MessageSerializer
 from .permissions import IsParticipantOfConversation
 from .filters import MessageFilter
 from django_filters.rest_framework import DjangoFilterBackend
+from django.contrib.auth import get_user_model
+from rest_framework.decorators import api_view, permission_classes
+
+
+
 
 class MessageViewSet(viewsets.ModelViewSet):
     queryset = Message.objects.all()
@@ -83,3 +88,11 @@ class MessageViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(sender=self.request.user)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_user(request):
+    user = request.user
+    user.delete()
+    return Response({"message": "Your account has been deleted."}, status=status.HTTP_200_OK)     
