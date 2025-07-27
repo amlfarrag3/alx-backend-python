@@ -80,6 +80,8 @@ class Message(models.Model):
     content = models.TextField()
     edited = models.BooleanField(default=False) 
     sent_at = models.DateTimeField(auto_now_add=True)
+    edited_at = models.DateTimeField(null=True, blank=True)
+    edited_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='edited_messages')
     receiver = models.ForeignKey(User, related_name='received_messages', on_delete=models.CASCADE,null=True, blank=True)
 
     def __str__(self):
