@@ -12,6 +12,15 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import get_user_model
 from rest_framework.decorators import api_view, permission_classes
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.cache import cache_page
+
+@cache_page(60)  # Cache for 60 seconds
+def conversation_messages(request, conversation_id):
+    conversation = get_object_or_404(Conversation, pk=conversation_id)
+    messages = conversation.messages.select_related('sender', 'receiver').order_by('sent_at')
+    return render(request, 'messaging/conversation.html', {'conversation': conversation, 'messages': messages})
+
+
 
 
 class MessageViewSet(viewsets.ModelViewSet):
@@ -125,11 +134,10 @@ def get_threaded_conversation_data(conversation_id):
         .prefetch_related('replies')
 
     return [serialize_message_with_replies(msg) for msg in top_level_messages]
-    
+
+
 
 @login_required
 def unread_messages_view(request):
     messages = Message.unread.unread_for_user(request.user).only('id', 'message_body', 'sender', 'sent_at')
     return render(request, 'messaging/unread_messages.html', {'messages': messages})
-
-
