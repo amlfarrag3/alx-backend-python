@@ -73,6 +73,11 @@ class Conversation(models.Model):
         return f"Conversation {self.conversation_id}"
 
 
+class UnreadMessagesManager(models.Manager):
+    def for_user(self, user):
+        return self.get_queryset().filter(receiver=user, read=False).only('message_body', 'sender', 'sent_at')   
+
+
 class Message(models.Model):
     message_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
@@ -91,6 +96,9 @@ class Message(models.Model):
         related_name='replies',
         on_delete=models.CASCADE
     )
+    read = models.BooleanField(default=False)
+    objects = models.Manager()  # Default manager
+    unread = UnreadMessagesManager()  # Custom manager
     def __str__(self):
         return f"From {self.sender} to {self.receiver} at {self.timestamp}"  
         
@@ -112,6 +120,9 @@ class MessageHistory(models.Model):
 
     def __str__(self):
         return f"History for Message {self.message_id} at {self.updated_at}"
+    
+
+ 
 
 
 
